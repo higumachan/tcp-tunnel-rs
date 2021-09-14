@@ -17,8 +17,6 @@ pub async fn read_protocol<R: AsyncRead + std::marker::Unpin>(
     let mut buf_protocol = [0; 128];
     let n = reader.deref_mut().read(&mut buf_protocol).await?;
 
-    dbg!(n);
-
     Ok(bincode::deserialize(&buf_protocol[0..n])?)
 }
 
