@@ -14,7 +14,7 @@ struct Opt {
     control_address: String,
     #[structopt(short = "C", long = "client_address")]
     client_address: String,
-    #[structopt(short = "g", long = "client_address")]
+    #[structopt(short = "g", long = "myglobal_ip_address")]
     myglobal_ip_address: String,
 }
 
