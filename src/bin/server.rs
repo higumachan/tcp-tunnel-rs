@@ -31,13 +31,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut socket_agent_control = listener_for_agent_control.accept().await?.0;
         println!("connect agent");
         let listener_for_client = TcpListener::bind(opt.client_address.clone()).await?;
+        let myglobal_ip_address = opt.myglobal_ip_address.clone();
         tokio::spawn(async move {
             loop {
                 let (mut socket_client, _) = listener_for_client.accept().await.unwrap();
                 println!("connect client");
 
                 let new_port = port_assigner.write().await.next();
-                let new_address = format!("{}:{}", opt.myglobal_ip_address.clone(), new_port);
+                let new_address = format!("{}:{}", myglobal_ip_address.clone(), new_port);
                 let listener_for_agent = TcpListener::bind(new_address.clone()).await.unwrap();
                 println!("bind {}", new_address);
                 write_protocol(
