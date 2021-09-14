@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use structopt::StructOpt;
 use tcp_tunnel_rs::{read_protocol, write_protocol, Protocol};
 use tokio;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -7,9 +8,19 @@ use tokio::sync::RwLock;
 
 const BUFFER_SIZE: usize = 32 * 1024;
 
+#[derive(Debug, StructOpt)]
+struct Opt {
+    #[structopt(short = "c", long = "control_address")]
+    control_address: String,
+    #[structopt(short = "p", long = "target_port")]
+    target_port: u16,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut control_server_stream = TcpStream::connect("127.0.0.1:7136").await?;
+    let opt = Opt::from_args();
+
+    let mut control_server_stream = TcpStream::connect(opt.control_address).await?;
 
     loop {
         let protocol = { read_protocol(&mut control_server_stream).await.unwrap() };
@@ -18,7 +29,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Protocol::NewClientRequest { address } => {
                 let mut tunnel_server_stream = TcpStream::connect(address.clone()).await.unwrap();
                 println!("connect {}", &address);
-                let mut target_server_stream = TcpStream::connect("127.0.0.1:7134").await.unwrap();
+                let mut target_server_stream =
+                    TcpStream::connect(format!("127.0.0.1:{}", opt.target_port))
+                        .await
+                        .unwrap();
                 println!("connect target");
                 write_protocol(&mut control_server_stream, &Protocol::NewClientResponse)
                     .await

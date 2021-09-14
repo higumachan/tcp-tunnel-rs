@@ -8,6 +8,8 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/log-4db925a69356e310/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/memchr-d8e41aab1d5c3590/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/parking_lot_core-16794a53859e77f4/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro-error-attr-80cd3813278aec32/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro-error-d43801ad57ad2f16/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro2-f2e4ba9de39a78db/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde-4fce423d038627dc/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde-d6a8dfb6443f55b2/out" isTestSource="false" />

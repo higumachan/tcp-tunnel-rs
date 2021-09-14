@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use structopt::StructOpt;
 use tcp_tunnel_rs::{read_protocol, write_protocol, PortAssigner, Protocol};
 use tokio;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -7,9 +8,19 @@ use tokio::sync::RwLock;
 
 const BUFFER_SIZE: usize = 32 * 1024;
 
+#[derive(Debug, StructOpt)]
+struct Opt {
+    #[structopt(short = "c", long = "control_address")]
+    control_address: String,
+    #[structopt(short = "C", long = "client_address")]
+    client_address: String,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let listener_for_agent_control = TcpListener::bind("127.0.0.1:7136").await?;
+    let opt = Opt::from_args();
+
+    let listener_for_agent_control = TcpListener::bind(opt.control_address.clone()).await?;
     let mut port_assigner = Arc::new(RwLock::new(PortAssigner::new()));
 
     println!("start server");
@@ -17,14 +28,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let port_assigner = port_assigner.clone();
         let mut socket_agent_control = listener_for_agent_control.accept().await?.0;
         println!("connect agent");
-        let listener_for_client = TcpListener::bind("127.0.0.1:7135").await?;
+        let listener_for_client = TcpListener::bind(opt.client_address.clone()).await?;
         tokio::spawn(async move {
             loop {
                 let (mut socket_client, _) = listener_for_client.accept().await.unwrap();
                 println!("connect client");
 
                 let new_port = port_assigner.write().await.next();
-                let new_address = format!("127.0.0.1:{}", new_port);
+                let new_address = format!("0.0.0.0:{}", new_port);
                 let listener_for_agent = TcpListener::bind(new_address.clone()).await.unwrap();
                 println!("bind {}", new_address);
                 write_protocol(
