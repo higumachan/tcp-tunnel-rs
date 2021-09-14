@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let listener_for_agent = TcpListener::bind(new_address.clone()).await.unwrap();
                 println!("bind {}", new_address);
                 write_protocol(
-                    &mut &mut socket_agent_control,
+                    &mut socket_agent_control,
                     &Protocol::NewClientRequest {
                         address: new_address,
                     },
@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut socket_agent = listener_for_agent.accept().await.unwrap().0;
                 println!("accept");
 
-                let protocol = read_protocol(&mut &mut socket_agent_control).await.unwrap();
+                let protocol = read_protocol(&mut socket_agent_control).await.unwrap();
 
                 assert_eq!(protocol, Protocol::NewClientResponse);
                 println!("received new client response");

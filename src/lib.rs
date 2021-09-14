@@ -12,7 +12,7 @@ pub enum Protocol {
 }
 
 pub async fn read_protocol<R: AsyncRead + std::marker::Unpin>(
-    reader: &mut impl DerefMut<Target = R>,
+    mut reader: impl DerefMut<Target = R>,
 ) -> Result<Protocol, anyhow::Error> {
     let mut buf_protocol = [0; 128];
     let n = reader.deref_mut().read(&mut buf_protocol).await?;
@@ -23,7 +23,7 @@ pub async fn read_protocol<R: AsyncRead + std::marker::Unpin>(
 }
 
 pub async fn write_protocol<W: AsyncWrite + AsyncWriteExt + std::marker::Unpin>(
-    writer: &mut impl DerefMut<Target = W>,
+    mut writer: impl DerefMut<Target = W>,
     protocol: &Protocol,
 ) -> Result<(), anyhow::Error> {
     Ok(writer
