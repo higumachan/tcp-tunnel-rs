@@ -14,6 +14,8 @@ struct Opt {
     control_address: String,
     #[structopt(short = "C", long = "client_address")]
     client_address: String,
+    #[structopt(short = "g", long = "client_address")]
+    myglobal_ip_address: String,
 }
 
 #[tokio::main]
@@ -35,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("connect client");
 
                 let new_port = port_assigner.write().await.next();
-                let new_address = format!("0.0.0.0:{}", new_port);
+                let new_address = format!("{}:{}", opt.myglobal_ip_address.clone(), new_port);
                 let listener_for_agent = TcpListener::bind(new_address.clone()).await.unwrap();
                 println!("bind {}", new_address);
                 write_protocol(
