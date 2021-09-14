@@ -39,7 +39,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 let new_port = port_assigner.write().await.next();
                 let new_address = format!("{}:{}", myglobal_ip_address.clone(), new_port);
-                let listener_for_agent = TcpListener::bind(new_address.clone()).await.unwrap();
+                let listener_for_agent = TcpListener::bind(format!("0.0.0.0:{}", new_port))
+                    .await
+                    .unwrap();
                 println!("bind {}", new_address);
                 write_protocol(
                     &mut socket_agent_control,
