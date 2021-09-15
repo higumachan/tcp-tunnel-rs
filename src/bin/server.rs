@@ -55,7 +55,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &NewAgentResponse {
                 address: format!("{}:{}", &myglobal_ip_address, new_client_port),
             },
-        );
+        )
+        .await
+        .unwrap();
 
         tokio::spawn(async move {
             loop {
