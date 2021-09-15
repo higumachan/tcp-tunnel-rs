@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::sync::Arc;
 use structopt::StructOpt;
 use tcp_tunnel_rs::{read_protocol, write_protocol, Protocol};
@@ -10,8 +11,8 @@ const BUFFER_SIZE: usize = 32 * 1024;
 
 #[derive(Debug, StructOpt)]
 struct Opt {
-    #[structopt(short = "c", long = "control_address")]
-    control_address: String,
+    #[structopt(short = "c", long = "control_address", parse(try_from_str))]
+    control_address: SocketAddr,
     #[structopt(short = "p", long = "target_port")]
     target_port: u16,
 }
@@ -77,6 +78,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                 });
+            }
+            Protocol::NewAgentResponse { address } => {
+                println!("tunnel server address {}", address);
             }
             _ => {
                 unreachable!()

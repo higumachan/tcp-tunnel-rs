@@ -2,13 +2,15 @@ use anyhow;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::mem::size_of;
-use std::ops::DerefMut;
+use std::ops::{DerefMut, Range, RangeInclusive};
+use std::str::FromStr;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Protocol {
     NewClientRequest { address: String },
     NewClientResponse,
+    NewAgentResponse { address: String },
 }
 
 pub async fn read_protocol<R: AsyncRead + std::marker::Unpin>(
@@ -30,17 +32,51 @@ pub async fn write_protocol<W: AsyncWrite + AsyncWriteExt + std::marker::Unpin>(
         .await?)
 }
 
+#[derive(Debug, Clone)]
+pub struct PortRange {
+    range: RangeInclusive<u16>,
+}
+
+impl PortRange {
+    fn new(range: RangeInclusive<u16>) -> Self {
+        Self { range }
+    }
+}
+
+impl FromStr for PortRange {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let ports: Vec<_> = s.split(":").filter_map(|x| x.parse().ok()).collect();
+
+        if ports.len() == 2 {
+            Ok(Self {
+                range: ports[0]..=ports[1],
+            })
+        } else {
+            Err(format!("parse error: {}", s))
+        }
+    }
+}
+
 pub struct PortAssigner {
-    port_start: u16,
+    port_range: PortRange,
+    current: PortRange,
 }
 
 impl PortAssigner {
-    pub fn new() -> Self {
-        Self { port_start: 10000 }
+    pub fn new(port_range: PortRange) -> Self {
+        Self {
+            current: port_range.clone(),
+            port_range: port_range.clone(),
+        }
     }
     pub fn next(&mut self) -> u16 {
-        let ret = self.port_start;
-        self.port_start += 1;
-        ret
+        if let Some(n) = self.current.range.next() {
+            n
+        } else {
+            self.current = self.port_range.clone();
+            self.current.range.next().unwrap()
+        }
     }
 }
