@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 use structopt::StructOpt;
-use tcp_tunnel_rs::{read_protocol, write_protocol, Protocol};
+use tcp_tunnel_rs::{read_protocol, write_protocol, ProtocolAgentToSever, ProtocolSeverToAgent};
 use tokio;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -18,22 +18,25 @@ struct Opt {
     target_port: u16,
 }
 
-async fn agent_main(mut control_server_stream: TcpStream) -> anyhow::Result<()> {
+async fn agent_main(mut control_server_stream: TcpStream, target_port: u16) -> anyhow::Result<()> {
     loop {
         let protocol = { read_protocol(&mut control_server_stream).await.unwrap() };
 
         match protocol {
-            Protocol::NewClientRequest { address } => {
+            ProtocolSeverToAgent::NewClientRequest { address } => {
                 let mut tunnel_server_stream = TcpStream::connect(address.clone()).await.unwrap();
                 println!("connect {}", &address);
                 let mut target_server_stream =
-                    TcpStream::connect(format!("127.0.0.1:{}", opt.target_port))
+                    TcpStream::connect(format!("127.0.0.1:{}", target_port))
                         .await
                         .unwrap();
                 println!("connect target");
-                write_protocol(&mut control_server_stream, &Protocol::NewClientResponse)
-                    .await
-                    .unwrap();
+                write_protocol(
+                    &mut control_server_stream,
+                    &ProtocolAgentToSever::NewClientResponse,
+                )
+                .await
+                .unwrap();
                 println!("send request");
                 tokio::spawn(async move {
                     let mut buf_tunnel = [0; BUFFER_SIZE];
@@ -75,7 +78,7 @@ async fn agent_main(mut control_server_stream: TcpStream) -> anyhow::Result<()> 
                     }
                 });
             }
-            Protocol::NewAgentResponse { address } => {
+            ProtocolSeverToAgent::NewAgentResponse { address } => {
                 println!("tunnel server address {}", address);
             }
             _ => {
@@ -92,7 +95,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         println!("try connect control sever");
         if let Ok(mut control_server_stream) = TcpStream::connect(opt.control_address).await {
-            agent_main(control_server_stream).await?;
+            agent_main(control_server_stream, opt.target_port).await?;
         } else {
             println!("fail connect control server.");
             sleep(Duration::from_secs(1)).await;

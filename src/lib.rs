@@ -7,24 +7,31 @@ use std::str::FromStr;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub enum Protocol {
+pub enum ProtocolSeverToAgent {
     NewClientRequest { address: String },
-    NewClientResponse,
     NewAgentResponse { address: String },
 }
 
-pub async fn read_protocol<R: AsyncRead + std::marker::Unpin>(
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProtocolAgentToSever {
+    NewClientResponse,
+}
+
+pub async fn read_protocol<R: AsyncRead + std::marker::Unpin, P>(
     mut reader: impl DerefMut<Target = R>,
-) -> Result<Protocol, anyhow::Error> {
+) -> Result<P, anyhow::Error>
+where
+    P: for<'de> Deserialize<'de>,
+{
     let mut buf_protocol = [0; 128];
     let n = reader.deref_mut().read(&mut buf_protocol).await?;
 
     Ok(bincode::deserialize(&buf_protocol[0..n])?)
 }
 
-pub async fn write_protocol<W: AsyncWrite + AsyncWriteExt + std::marker::Unpin>(
+pub async fn write_protocol<W: AsyncWrite + AsyncWriteExt + std::marker::Unpin, P: Serialize>(
     mut writer: impl DerefMut<Target = W>,
-    protocol: &Protocol,
+    protocol: &P,
 ) -> Result<(), anyhow::Error> {
     Ok(writer
         .deref_mut()

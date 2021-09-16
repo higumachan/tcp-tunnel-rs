@@ -1,8 +1,8 @@
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use structopt::StructOpt;
-use tcp_tunnel_rs::Protocol::NewAgentResponse;
-use tcp_tunnel_rs::{read_protocol, write_protocol, PortAssigner, PortRange, Protocol};
+use tcp_tunnel_rs::{read_protocol, write_protocol, PortAssigner, PortRange};
+use tcp_tunnel_rs::{ProtocolAgentToSever, ProtocolSeverToAgent};
 use tokio;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         write_protocol(
             &mut socket_agent_control,
-            &NewAgentResponse {
+            &ProtocolSeverToAgent::NewAgentResponse {
                 address: format!("{}:{}", &myglobal_ip_address, new_client_port),
             },
         )
@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("bind {}", new_address);
                 write_protocol(
                     &mut socket_agent_control,
-                    &Protocol::NewClientRequest {
+                    &ProtocolSeverToAgent::NewClientRequest {
                         address: new_address,
                     },
                 )
@@ -83,9 +83,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut socket_agent = listener_for_agent.accept().await.unwrap().0;
                 println!("accept");
 
-                let protocol = read_protocol(&mut socket_agent_control).await.unwrap();
+                let protocol: ProtocolAgentToSever =
+                    read_protocol(&mut socket_agent_control).await.unwrap();
 
-                assert_eq!(protocol, Protocol::NewClientResponse);
+                assert_eq!(protocol, ProtocolAgentToSever::NewClientResponse);
                 println!("received new client response");
 
                 tokio::spawn(async move {
