@@ -6,6 +6,7 @@ use tokio;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::RwLock;
+use tokio::time::{sleep, Duration};
 
 const BUFFER_SIZE: usize = 32 * 1024;
 
@@ -17,12 +18,7 @@ struct Opt {
     target_port: u16,
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let opt = Opt::from_args();
-
-    let mut control_server_stream = TcpStream::connect(opt.control_address).await?;
-
+async fn agent_main(mut control_server_stream: TcpStream) -> anyhow::Result<()> {
     loop {
         let protocol = { read_protocol(&mut control_server_stream).await.unwrap() };
 
@@ -86,5 +82,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 unreachable!()
             }
         };
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let opt = Opt::from_args();
+
+    loop {
+        println!("try connect control sever");
+        if let Ok(mut control_server_stream) = TcpStream::connect(opt.control_address).await {
+            agent_main(control_server_stream).await?;
+        } else {
+            println!("fail connect control server.");
+            sleep(Duration::from_secs(1)).await;
+        }
     }
 }
